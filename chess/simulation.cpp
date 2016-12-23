@@ -1,4 +1,4 @@
-/*******************************
+/*******************************next
 Copyright (C) 2013-2016 gregoire ANGERAND
 
 This program is free software: you can redistribute it and/or modify
@@ -19,20 +19,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <functional>
 #include <numeric>
 
+#include <iostream>
+#include "io.h"
+
 namespace chess {
 
-int value(PieceType p) {
+int signed_value(PieceType p) {
 	int values[] = {0, 1, 5, 3, 3, 9, 10000};
 	return values[p];
 }
 
 int signed_value(Piece p) {
-	return value(p.type) * int(p.color);
+	return signed_value(p.type) * int(p.color);
 }
 
 int signed_value(const Board& board) {
 	return std::accumulate(board.begin(), board.end(), 0, [](int v, const auto& p) { return v + signed_value(p); });
 }
+
+int signed_value(const Board& board, Color color) {
+	return signed_value(board) * color;
+}
+
 
 
 
@@ -215,11 +223,44 @@ Outcome monte_carlo(Board& board, Color color) {
 		board = board(moves[rand() % moves.size()]);
 	}
 
-	Outcome score = board.immediate_status(color);
-	if(!score) {
+	Outcome outcome = board.immediate_status(color);
+	if(!outcome) {
 		return -monte_carlo(board, -color);
 	}
-	return score;
+	return outcome;
+}
+
+
+int minmax(Move& best, const Board& board, Color color, usize rec_limit) {
+	core::Vector<std::pair<Pos, Pos>> moves;
+	all_legal_moves(board, color, moves);
+	if(moves.is_empty()) {
+		return 0;
+	}
+
+	int max = std::numeric_limits<int>::min();
+	if(!rec_limit) {
+		for(const auto& move : moves) {
+			int v = signed_value(board(move), color);
+			if(v > max) {
+				best = move;
+				max = v;
+			}
+		}
+	} else {
+		for(const auto& move : moves) {
+			Board next = board(move);
+			Move rec;
+			int v = next.immediate_status(color) ?
+						signed_value(board, color) :
+						minmax(rec, next, -color, rec_limit - 1) * color;
+			if(v > max) {
+				best = move;
+				max = v;
+			}
+		}
+	}
+	return max;
 }
 
 }

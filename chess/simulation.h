@@ -21,10 +21,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace chess {
 
-int value(PieceType p);
+int signed_value(PieceType p);
 int signed_value(Piece p);
 
 int signed_value(const Board& board);
+int signed_value(const Board& board, Color color);
 
 void legal_moves(const Board& board, const Pos& pos, core::Vector<Pos>& moves);
 void all_legal_moves(const Board& board, Color color, core::Vector<Move>& moves);
@@ -34,6 +35,8 @@ BitBoard coverage(const Board& board, Color color);
 bool is_covered(const Board& board, const Pos& pos, Color color);
 
 Outcome monte_carlo(Board& board, Color color);
+
+int minmax(Move& best, const Board& board, Color color, usize rec_limit = 2);
 
 
 }

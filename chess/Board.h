@@ -25,8 +25,9 @@ namespace chess {
 struct Board {
 	static constexpr usize Size = 8;
 	std::array<std::array<Piece, Size>, Size> board = {};
+
 	static Board start();
-	static Board wins(Color color);
+	static Board wins(Color color, bool immediate = false);
 
 	using iterator = Piece*;
 	using const_iterator = const Piece*;

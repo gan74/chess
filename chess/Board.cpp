@@ -33,13 +33,13 @@ Board Board::start() {
 	return b;
 }
 
-Board Board::wins(Color color) {
+Board Board::wins(Color color, bool immediate) {
 	Board b;
 	b[Pos(0, 0)] = -color | King;
 	b[Pos(Size - 1, Size - 1)] = color | King;
 
 	b[Pos(Size - 1, 1)] = color | Rook;
-	b[Pos(Size - 2, 2)] = color | Rook;
+	b[Pos(Size - 2, immediate ? 0 : 2)] = color | Rook;
 	return b;
 }
 

@@ -22,24 +22,24 @@ namespace chess {
 Board Board::start() {
 	Board b;
 	for(size_t x = 0; x != Board::Size; ++x) {
-		b.board[x][1]				= Color::Black | PieceType::Pawn;
-		b.board[x][Board::Size - 2]	= Color::White | PieceType::Pawn;
+		b.board[x][1]				= Black | Pawn;
+		b.board[x][Board::Size - 2]	= White | Pawn;
 	}
-	PieceType back_line[] = {PieceType::Rook, PieceType::Knight, PieceType::Bishop, PieceType::King, PieceType::Queen, PieceType::Bishop, PieceType::Knight, PieceType::Rook};
+	PieceType back_line[] = {Rook, Knight, Bishop, King, Queen, Bishop, Knight, Rook};
 	for(size_t x = 0; x != Board::Size; ++x) {
-		b.board[x][0]				= Color::Black | back_line[x];
-		b.board[x][Board::Size - 1]	= Color::White | back_line[x];
+		b.board[x][0]				= Black | back_line[x];
+		b.board[x][Board::Size - 1]	= White | back_line[x];
 	}
 	return b;
 }
 
 Board Board::wins(Color color) {
 	Board b;
-	b[Pos(0, 0)] = -color | PieceType::King;
-	b[Pos(Size - 1, Size - 1)] = color | PieceType::King;
+	b[Pos(0, 0)] = -color | King;
+	b[Pos(Size - 1, Size - 1)] = color | King;
 
-	b[Pos(Size - 1, 1)] = color | PieceType::Rook;
-	b[Pos(Size - 2, 2)] = color | PieceType::Rook;
+	b[Pos(Size - 1, 1)] = color | Rook;
+	b[Pos(Size - 2, 2)] = color | Rook;
 	return b;
 }
 
@@ -54,12 +54,12 @@ Board Board::operator()(const Move& m) const {
 Outcome Board::immediate_status(Color color) const {
 	int score = 0;
 	for(const auto& p : *this) {
-		if(p.type == PieceType::King) {
+		if(p.type == King) {
 			score += p.color;
 		}
 	}
 	score *= color;
-	return score < 0 ? Outcome::Lose : score > 0 ? Outcome::Win : Outcome::Draw;
+	return score < 0 ? Lose : score > 0 ? Win : Draw;
 }
 
 Pos Board::to_pos(usize i) const {
@@ -97,7 +97,7 @@ const Piece& Board::piece(const Pos& p) const {
 Pos Board::king(Color color) const {
 	for(const auto& pos : positions()) {
 		auto p = piece(pos);
-		if(p.type == PieceType::King && p.color == color) {
+		if(p.type == King && p.color == color) {
 			return pos;
 		}
 	}

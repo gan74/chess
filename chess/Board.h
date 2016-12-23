@@ -22,7 +22,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace chess {
 
-
 struct Board {
 	static constexpr usize Size = 8;
 	std::array<std::array<Piece, Size>, Size> board = {};
@@ -79,6 +78,8 @@ struct Board {
 	}
 
 };
+
+using BitBoard = std::bitset<Board::Size * Board::Size>;
 
 }
 

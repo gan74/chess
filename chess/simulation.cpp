@@ -30,8 +30,8 @@ int signed_value(Piece p) {
 	return value(p.type) * int(p.color);
 }
 
-int signed_value(const Board& b) {
-	return std::accumulate(b.begin(), b.end(), 0, [](int v, const auto& p) { return v + signed_value(p); });
+int signed_value(const Board& board) {
+	return std::accumulate(board.begin(), board.end(), 0, [](int v, const auto& p) { return v + signed_value(p); });
 }
 
 
@@ -96,14 +96,6 @@ static void queen_moves(const Board& b, const Pos& pos, core::Vector<Pos>& moves
 	bishop_moves(b, pos, moves);
 }
 
-static void king_moves(const Board& b, const Pos& pos, core::Vector<Pos>& moves) {
-	Color color = b[pos].color;
-
-	std::array<Pos, 8> offsets = {{Pos(1, 1), Pos(-1, 1), Pos(1, -1), Pos(-1, -1),
-								   Pos(1, 0), Pos(-1, 0), Pos(0, 1), Pos(0, -1)}};
-	array_moves(b, color, pos, offsets, moves);
-}
-
 static void knight_moves(const Board& b, const Pos& pos, core::Vector<Pos>& moves) {
 	Color color = b[pos].color;
 	std::array<Pos, 8> offsets = {{Pos(2, 1), Pos(-2, 1), Pos(2, -1), Pos(-2, -1),
@@ -127,53 +119,98 @@ static void pawn_moves(const Board& b, const Pos& pos, core::Vector<Pos>& moves)
 	}
 }
 
-void legal_moves(const Board& b, const Pos& pos, core::Vector<Pos>& moves) {
-	switch(b[pos].type) {
-		case PieceType::Pawn:
-			return pawn_moves(b, pos, moves);
+static void king_moves(const Board& b, const Pos& pos, core::Vector<Pos>& moves) {
+	Color color = b[pos].color;
 
-		case PieceType::Rook:
-			return rook_moves(b, pos, moves);
+	std::array<Pos, 8> offsets = {{Pos(1, 1), Pos(-1, 1), Pos(1, -1), Pos(-1, -1),
+								   Pos(1, 0), Pos(-1, 0), Pos(0, 1), Pos(0, -1)}};
+	array_moves(b, color, pos, offsets, moves);
+}
 
-		case PieceType::Knight:
-			return knight_moves(b, pos, moves);
+void legal_moves(const Board& board, const Pos& pos, core::Vector<Pos>& moves) {
+	switch(board[pos].type) {
+		case Pawn:
+			return pawn_moves(board, pos, moves);
 
-		case PieceType::Bishop:
-			return bishop_moves(b, pos, moves);
+		case Rook:
+			return rook_moves(board, pos, moves);
 
-		case PieceType::Queen:
-			return queen_moves(b, pos, moves);
+		case Knight:
+			return knight_moves(board, pos, moves);
 
-		case PieceType::King:
-			return king_moves(b, pos, moves);
+		case Bishop:
+			return bishop_moves(board, pos, moves);
+
+		case Queen:
+			return queen_moves(board, pos, moves);
+
+		case King:
+			return king_moves(board, pos, moves);
 
 		default:
 			return;
 	}
 }
 
-void all_legal_moves(const Board &b, Color color, core::Vector<Move> &moves) {
-	for(const auto& pos : b.positions()) {
-		auto p = b[pos];
+void all_legal_moves(const Board &board, Color color, core::Vector<Move> &moves) {
+	for(const auto& pos : board.positions()) {
+		auto p = board[pos];
 		if(p.color == color) {
 			core::Vector<Pos> m;
-			legal_moves(b, pos, m);
-			moves.append(core::range(m).map([=](auto dst) { return std::make_pair(pos, dst); }));
+			legal_moves(board, pos, m);
+
+			moves.append(core::range(m)
+				.map([=](auto dst) {
+					return std::make_pair(pos, dst);
+				}));
 		}
 	}
 }
 
+void all_legal_dst(const Board &board, Color color, core::Vector<Pos> &dsts) {
+	for(const auto& pos : board.positions()) {
+		auto p = board[pos];
+		if(p.color == color) {
+			legal_moves(board, pos, dsts);
+		}
+	}
+}
+
+BitBoard coverage(const Board &board, Color color) {
+	core::Vector<Pos> dsts;
+	all_legal_dst(board, color, dsts);
+	BitBoard bits;
+	for(const auto& p : dsts) {
+		bits[board.to_index(p)] = true;
+	}
+	return bits;
+}
+
+bool is_covered(const Board &board, const Pos &pos, Color color) {
+	core::Vector<Pos> dsts;
+	for(const auto& p : board.positions()) {
+		dsts.make_empty();
+		auto pi = board[pos];
+		if(pi.color == color) {
+			legal_moves(board, p, dsts);
+			if(std::any_of(dsts.begin(), dsts.end(), [=](const Pos& dst) { return dst == pos; })) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
 
 Outcome monte_carlo(Board& board, Color color) {
 	{
 		core::Vector<std::pair<Pos, Pos>> moves;
 		all_legal_moves(board, color, moves);
 		if(moves.is_empty()) {
-			return Outcome::Draw;
+			return Draw;
 		}
 		auto king_pos = board.king(-color);
-		if(std::find_if(moves.begin(), moves.end(), [=](const Move& m) { return m.second == king_pos; }) != moves.end()) {
-			return Outcome::Win;
+		if(std::any_of(moves.begin(), moves.end(), [=](const Move& m) { return m.second == king_pos; })) {
+			return Win;
 		}
 		board = board(moves[rand() % moves.size()]);
 	}

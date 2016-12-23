@@ -27,7 +27,7 @@ char char_for_type(PieceType p) {
 
 char char_for_piece(Piece p) {
 	char c = char_for_type(p.type);
-	if(p.type && p.color == Color::White) {
+	if(p.type && p.color == White) {
 		return char(toupper(c));
 	}
 	return c;

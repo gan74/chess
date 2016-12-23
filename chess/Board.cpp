@@ -33,7 +33,50 @@ Board Board::start() {
 	return b;
 }
 
+Board Board::wins(Color color) {
+	Board b;
+	b[Pos(0, 0)] = -color | PieceType::King;
+	b[Pos(Size - 1, Size - 1)] = color | PieceType::King;
 
+	b[Pos(Size - 1, 1)] = color | PieceType::Rook;
+	b[Pos(Size - 2, 2)] = color | PieceType::Rook;
+	return b;
+}
+
+
+
+Board Board::operator()(const Move& m) const {
+	Board b(*this);
+	b[m.second] = std::exchange(b[m.first], Piece{});
+	return b;
+}
+
+Outcome Board::immediate_status(Color color) const {
+	int score = 0;
+	for(const auto& p : *this) {
+		if(p.type == PieceType::King) {
+			score += p.color;
+		}
+	}
+	score *= color;
+	return score < 0 ? Outcome::Lose : score > 0 ? Outcome::Win : Outcome::Draw;
+}
+
+Pos Board::to_pos(usize i) const {
+	return Pos(i / Size, i % Size);
+}
+
+usize Board::to_index(const Pos& pos) const {
+	return pos.x() * Size + pos.y();
+}
+
+Piece& Board::operator[](usize i) {
+	return *(begin() + i);
+}
+
+const Piece& Board::operator[](usize i) const {
+	return *(begin() + i);
+}
 
 Piece& Board::operator[](const Pos& p) {
 	return board[p.x()][p.y()];
@@ -43,6 +86,23 @@ const Piece& Board::operator[](const Pos& p) const {
 	return board[p.x()][p.y()];
 }
 
+Piece& Board::piece(const Pos& p) {
+	return board[p.x()][p.y()];
+}
+
+const Piece& Board::piece(const Pos& p) const {
+	return board[p.x()][p.y()];
+}
+
+Pos Board::king(Color color) const {
+	for(const auto& pos : positions()) {
+		auto p = piece(pos);
+		if(p.type == PieceType::King && p.color == color) {
+			return pos;
+		}
+	}
+	return Pos(-1);
+}
 
 Board::iterator Board::begin() {
 	return &board[0][0];

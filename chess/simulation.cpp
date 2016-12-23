@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "simulation.h"
 #include <algorithm>
+#include <functional>
 #include <numeric>
 
 namespace chess {
@@ -149,6 +150,39 @@ void legal_moves(const Board& b, const Pos& pos, core::Vector<Pos>& moves) {
 		default:
 			return;
 	}
+}
+
+void all_legal_moves(const Board &b, Color color, core::Vector<Move> &moves) {
+	for(const auto& pos : b.positions()) {
+		auto p = b[pos];
+		if(p.color == color) {
+			core::Vector<Pos> m;
+			legal_moves(b, pos, m);
+			moves.append(core::range(m).map([=](auto dst) { return std::make_pair(pos, dst); }));
+		}
+	}
+}
+
+
+Outcome monte_carlo(Board& board, Color color) {
+	{
+		core::Vector<std::pair<Pos, Pos>> moves;
+		all_legal_moves(board, color, moves);
+		if(moves.is_empty()) {
+			return Outcome::Draw;
+		}
+		auto king_pos = board.king(-color);
+		if(std::find_if(moves.begin(), moves.end(), [=](const Move& m) { return m.second == king_pos; }) != moves.end()) {
+			return Outcome::Win;
+		}
+		board = board(moves[rand() % moves.size()]);
+	}
+
+	Outcome score = board.immediate_status(color);
+	if(!score) {
+		return -monte_carlo(board, -color);
+	}
+	return score;
 }
 
 }

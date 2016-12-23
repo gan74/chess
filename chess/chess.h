@@ -32,6 +32,23 @@ inline Color operator-(Color c) {
 	return Color(-int(c));
 }
 
+
+
+
+enum Outcome {
+	Win = 1,
+	Draw = 0,
+	Lose = -1
+};
+
+inline Outcome operator-(Outcome o) {
+	return Outcome(-int(o));
+}
+
+
+
+
+
 enum PieceType : u8 {
 	None = 0,
 	Pawn,
@@ -43,16 +60,32 @@ enum PieceType : u8 {
 };
 
 
+
+
+
 struct Piece {
 	Color color;
 	PieceType type;
+
+	bool operator==(const Piece& other) const {
+		return type == other.type && (type ? other.color == color : true);
+	}
+
+	bool operator!=(const Piece& other) const {
+		return !operator==(other);
+	}
 };
 
 inline Piece operator|(Color c, PieceType t) {
 	return Piece{c, t};
 }
 
+
+
+
+
 using Pos = math::Vec<2, i8>;
+using Move = std::pair<Pos, Pos>;
 
 }
 

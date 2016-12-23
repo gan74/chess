@@ -27,6 +27,9 @@ int signed_value(Piece p);
 int signed_value(const Board& b);
 
 void legal_moves(const Board& b, const Pos& pos, core::Vector<Pos>& moves);
+void all_legal_moves(const Board& b, Color color, core::Vector<Move>& moves);
+
+Outcome monte_carlo(Board& board, Color color);
 
 }
 

@@ -28,6 +28,10 @@ char char_for_piece(Piece p);
 
 std::ostream& operator<<(std::ostream& out, const Board& board);
 std::ostream& operator<<(std::ostream& out, const Pos& p);
+std::ostream& operator<<(std::ostream& out, const Move& m);
+
+std::ostream& operator<<(std::ostream& out, Outcome o);
+std::ostream& operator<<(std::ostream& out, Color c);
 
 std::istream& operator>>(std::istream& in, Pos& pos);
 

@@ -23,20 +23,23 @@ namespace chess {
 
 int signed_value(PieceType p);
 int signed_value(Piece p);
+int signed_value(Outcome o);
 
 int signed_value(const Board& board);
 int signed_value(const Board& board, Color color);
 
 void legal_moves(const Board& board, const Pos& pos, core::Vector<Pos>& moves);
 void all_legal_moves(const Board& board, Color color, core::Vector<Move>& moves);
+void all_legal_moves_conservative(const Board& board, Color color, core::Vector<Move>& moves);
 
 void all_legal_dst(const Board& board, Color color, core::Vector<Pos>& dsts);
 BitBoard coverage(const Board& board, Color color);
 bool is_covered(const Board& board, const Pos& pos, Color color);
+bool is_check(const Board& board, Color color);
 
 Outcome monte_carlo(Board& board, Color color);
 
-int minmax(Move& best, const Board& board, Color color, usize rec_limit = 2);
+int minimax(const Board& board, Color color, usize rec_limit = 2);
 
 
 }

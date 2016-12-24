@@ -19,9 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <functional>
 #include <numeric>
 
-#include <iostream>
-#include "io.h"
-
 namespace chess {
 
 int signed_value(PieceType p) {
@@ -39,6 +36,11 @@ int signed_value(const Board& board) {
 
 int signed_value(const Board& board, Color color) {
 	return signed_value(board) * color;
+}
+
+int signed_value(Outcome o) {
+	int w = signed_value(King);
+	return o == Draw ? -(w / 2) : w * o;
 }
 
 
@@ -175,6 +177,30 @@ void all_legal_moves(const Board &board, Color color, core::Vector<Move> &moves)
 	}
 }
 
+
+void all_legal_moves_conservative(const Board& board, Color color, core::Vector<Move>& moves) {
+	for(const auto& pos : board.positions()) {
+		auto p = board[pos];
+		if(p.color == color) {
+			core::Vector<Pos> m;
+			legal_moves(board, pos, m);
+			if(p.type == King) {
+				BitBoard cover = coverage(board, -color);
+				for(const auto& dst : m) {
+					if(!cover[board.to_index(dst)]) {
+						moves << std::make_pair(pos, dst);
+					}
+				}
+			} else {
+				moves.append(core::range(m)
+					.map([=](auto dst) {
+						return std::make_pair(pos, dst);
+					}));
+			}
+		}
+	}
+}
+
 void all_legal_dst(const Board &board, Color color, core::Vector<Pos> &dsts) {
 	for(const auto& pos : board.positions()) {
 		auto p = board[pos];
@@ -194,19 +220,15 @@ BitBoard coverage(const Board &board, Color color) {
 	return bits;
 }
 
-bool is_covered(const Board &board, const Pos &pos, Color color) {
+bool is_covered(const Board &board, const Pos& pos, Color color) {
 	core::Vector<Pos> dsts;
-	for(const auto& p : board.positions()) {
-		dsts.make_empty();
-		auto pi = board[pos];
-		if(pi.color == color) {
-			legal_moves(board, p, dsts);
-			if(std::any_of(dsts.begin(), dsts.end(), [=](const Pos& dst) { return dst == pos; })) {
-				return true;
-			}
-		}
-	}
-	return false;
+	all_legal_dst(board, color, dsts);
+	return std::any_of(dsts.begin(), dsts.end(), [=](const Pos& dst) { return dst == pos; });
+}
+
+
+bool is_check(const Board& board, Color color) {
+	return is_covered(board, board.king(color), -color);
 }
 
 Outcome monte_carlo(Board& board, Color color) {
@@ -231,36 +253,28 @@ Outcome monte_carlo(Board& board, Color color) {
 }
 
 
-int minmax(Move& best, const Board& board, Color color, usize rec_limit) {
+static int minimax_rec(const Board& board, Color color, usize rec_limit) {
+	if(!rec_limit || board.immediate_status(color)) {
+		return signed_value(board, color);
+	}
+
 	core::Vector<std::pair<Pos, Pos>> moves;
-	all_legal_moves(board, color, moves);
+	all_legal_moves_conservative(board, color, moves);
+
 	if(moves.is_empty()) {
-		return 0;
+		return -(is_check(board, color) ? signed_value(Win) : signed_value(Draw));
 	}
 
 	int max = std::numeric_limits<int>::min();
-	if(!rec_limit) {
-		for(const auto& move : moves) {
-			int v = signed_value(board(move), color);
-			if(v > max) {
-				best = move;
-				max = v;
-			}
-		}
-	} else {
-		for(const auto& move : moves) {
-			Board next = board(move);
-			Move rec;
-			int v = next.immediate_status(color) ?
-						signed_value(board, color) :
-						minmax(rec, next, -color, rec_limit - 1) * color;
-			if(v > max) {
-				best = move;
-				max = v;
-			}
-		}
+	for(const auto& move : moves) {
+		max = std::max(max, -minimax(board(move), -color, rec_limit - 1));
 	}
 	return max;
 }
+
+int minimax(const Board& board, Color color, usize rec_limit) {
+	return minimax_rec(board, color, rec_limit);
+}
+
 
 }

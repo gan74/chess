@@ -38,7 +38,9 @@ Board Board::wins(Color color, bool immediate) {
 	b[Pos(0, 0)] = -color | King;
 	b[Pos(Size - 1, Size - 1)] = color | King;
 
-	b[Pos(Size - 1, 1)] = color | Rook;
+	if(!immediate) {
+		b[Pos(Size - 1, 1)] = color | Rook;
+	}
 	b[Pos(Size - 2, immediate ? 0 : 2)] = color | Rook;
 	return b;
 }

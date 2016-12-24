@@ -88,6 +88,20 @@ std::ostream& operator<<(std::ostream& out, const Pos& p) {
 	return out;
 }
 
+std::ostream& operator<<(std::ostream& out, const Move& m) {
+	out << m.first << m.second;
+	return out;
+}
+
+std::ostream& operator<<(std::ostream& out, Outcome o) {
+	out << (o == Win ? "Win" : (o == Lose ? "Lose" : "Draw"));
+	return out;
+}
+
+std::ostream& operator<<(std::ostream& out, Color color) {
+	out << (color == White ? "White" : (color == Black ? "Black" : "None"));
+	return out;
+}
 
 std::istream& operator>>(std::istream& in, Pos& pos) {
 	std::string str;

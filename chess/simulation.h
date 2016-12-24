@@ -37,7 +37,7 @@ BitBoard coverage(const Board& board, Color color);
 bool is_covered(const Board& board, const Pos& pos, Color color);
 bool is_check(const Board& board, Color color);
 
-Outcome monte_carlo(Board& board, Color color);
+Outcome monte_carlo(Board board, Color color);
 
 int minimax(const Board& board, Color color, usize rec_limit = 2);
 

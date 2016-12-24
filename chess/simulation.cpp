@@ -124,8 +124,9 @@ static void pawn_moves(const Board& b, const Pos& pos, core::Vector<Pos>& moves)
 			moves << p;
 		}
 	}
-	if(!b.has_piece(pos + Pos(0, dir))) {
-		moves << pos + Pos(0, dir);
+	auto forward = pos + Pos(0, dir);
+	if(pos_valid(forward) && !b.has_piece(forward)) {
+		moves << forward;
 	}
 }
 
@@ -231,7 +232,7 @@ bool is_check(const Board& board, Color color) {
 	return is_covered(board, board.king(color), -color);
 }
 
-Outcome monte_carlo(Board& board, Color color) {
+Outcome monte_carlo(Board board, Color color) {
 	{
 		core::Vector<std::pair<Pos, Pos>> moves;
 		all_legal_moves(board, color, moves);
@@ -252,8 +253,11 @@ Outcome monte_carlo(Board& board, Color color) {
 	return outcome;
 }
 
+static int no_moves(const Board& board, Color color) {
+	return -(is_check(board, color) ? signed_value(Win) : signed_value(Draw));
+}
 
-static int minimax_rec(const Board& board, Color color, usize rec_limit) {
+static int alpha_beta(const Board& board, Color color, usize rec_limit, int alpha, int beta) {
 	if(!rec_limit || board.immediate_status(color)) {
 		return signed_value(board, color);
 	}
@@ -262,18 +266,23 @@ static int minimax_rec(const Board& board, Color color, usize rec_limit) {
 	all_legal_moves_conservative(board, color, moves);
 
 	if(moves.is_empty()) {
-		return -(is_check(board, color) ? signed_value(Win) : signed_value(Draw));
+		return no_moves(board, color);
 	}
 
 	int max = std::numeric_limits<int>::min();
 	for(const auto& move : moves) {
-		max = std::max(max, -minimax(board(move), -color, rec_limit - 1));
+		int v = -alpha_beta(board(move), -color, rec_limit - 1, -beta, -alpha);
+		max = std::max(max, v);
+		alpha = std::max(alpha, v);
+		if(alpha > beta) {
+			break;
+		}
 	}
 	return max;
 }
 
 int minimax(const Board& board, Color color, usize rec_limit) {
-	return minimax_rec(board, color, rec_limit);
+	return alpha_beta(board, color, rec_limit, std::numeric_limits<int>::min(), std::numeric_limits<int>::max());
 }
 
 
